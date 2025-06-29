@@ -1,0 +1,131 @@
+# WordPress Migrator
+
+A PHP CLI and Web UI tool to automate migrating a WordPress website between cPanel and CyberPanel servers.
+
+---
+
+## Features
+
+- Direct server-to-server file transfer using SSH and rsync
+- MySQL database export, transfer, and import via SSH
+- Supports username/password authentication with configurable SSH ports
+- Bidirectional migration: cPanel to CyberPanel and vice versa
+- Clean logging of migration steps and errors
+- CLI and Web UI interfaces for flexibility
+
+---
+
+## Requirements
+
+- PHP 7.4 or higher
+- PHP ssh2 extension installed and enabled
+- SSH access with username/password to both source and destination servers
+- rsync installed on both servers
+- MySQL client tools (`mysqldump`, `mysql`) installed on both servers
+
+---
+
+## Installation
+
+1. Clone or download this repository.
+
+2. Install the PHP ssh2 extension:
+
+   ```bash
+   # macOS with Homebrew
+   brew install libssh2
+   pecl install ssh2
+
+   # Enable extension in php.ini
+   echo "extension=ssh2.so" >> $(php --ini | grep "Loaded Configuration" | sed -e "s|.*:\s*||")
+   ```
+
+3. Configure your credentials in `config/credentials.json` or use the Web UI to input them.
+
+---
+
+## Usage
+
+### CLI
+
+Run the CLI script:
+
+```bash
+php src/index.php
+```
+
+Follow the prompts to select migration direction, source/destination directories, and credentials.
+
+### Web UI
+
+1. Serve the `src/web.php` file via a PHP-enabled web server (e.g., Apache, Nginx, or PHP built-in server):
+
+```bash
+php -S localhost:8000 -t src
+```
+
+2. Open your browser and navigate to `http://localhost:8000/web.php`.
+
+3. Fill in the migration form with server details, directories, and credentials.
+
+4. Click **Start Migration** to begin.
+
+---
+
+## Configuration
+
+Example `config/credentials.example.json`:
+
+```json
+{
+  "cpanel": {
+    "host": "cpanel.example.com",
+    "username": "cpaneluser",
+    "password": "cpanelpass",
+    "port": 22,
+    "database": {
+      "name": "cpanel_db",
+      "user": "cpanel_db_user",
+      "password": "cpanel_db_pass"
+    }
+  },
+  "cyberpanel": {
+    "host": "cyberpanel.example.com",
+    "username": "cyberuser",
+    "password": "cyberpass",
+    "port": 22,
+    "database": {
+      "name": "cyberpanel_db",
+      "user": "cyberpanel_db_user",
+      "password": "cyberpanel_db_pass"
+    }
+  }
+}
+```
+
+---
+
+## Logging
+
+Migration logs are saved to `logs/migration.log`. Check this file for detailed progress and error messages.
+
+---
+
+## Notes
+
+- Ensure SSH access and permissions are correctly configured on both servers.
+- Test migration on a staging environment before production.
+- The tool currently supports username/password SSH authentication; SSH key support may be added in the future.
+- The tool requires `rsync` and MySQL client tools installed on both servers.
+
+---
+
+## License
+
+MIT License
+
+---
+
+## Contributing
+
+Contributions and improvements are welcome! Please open issues or pull requests.
