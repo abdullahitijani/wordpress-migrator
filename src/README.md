@@ -1,12 +1,25 @@
 # WordPress Migrator CLI (v1)
 
-This tool automates downloading a WordPress website from cPanel via FTP.
+This CLI tool automates downloading a WordPress website from a cPanel server via FTP. Future versions will include database export, CyberPanel import, and smart AI-based configurations.
 
-## Setup
+---
 
-1. Clone this repo
-2. Edit `config/credentials.json` with your FTP and CyberPanel info
-3. Run:
+## 🚀 Features (v1)
+
+- Connects to cPanel via FTP
+- Recursively downloads WordPress site files from `public_html`
+- Logs progress and errors to a file
+- Designed for easy extension to full migration workflows
+
+---
+
+## 📦 Setup Instructions
+
+1. **Clone the repository**
 
 ```bash
-php index.php
+git clone https://github.com/your-username/wordpress-migrator.git
+cd wordpress-migrator
+
+
+

@@ -1,0 +1,4 @@
+# Ignore sensitive config
+config/credentials.json
+logs/
+backup/
