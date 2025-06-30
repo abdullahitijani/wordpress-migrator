@@ -115,6 +115,9 @@ if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'POST') 
     </head>
 <body>
 <div class="container">
+    <div style="text-align: right; margin-bottom: 10px;">
+        <a href="logout.php" style="color: white; font-weight: 600; text-decoration: none; background-color: #0059b3; padding: 6px 12px; border-radius: 6px; transition: background-color 0.3s ease;">Logout</a>
+    </div>
     <h1>WordPress Migrator - Web UI</h1>
 
     <?php if (!empty($errors)): ?>
@@ -211,12 +214,14 @@ if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'POST') 
         function fetchLogs() {
             fetch('logs.php')
                 .then(response => {
+                    console.log('Fetch logs response status:', response.status);
                     if (!response.ok) {
                         throw new Error('Network response was not ok');
                     }
                     return response.text();
                 })
                 .then(data => {
+                    console.log('Fetch logs data length:', data.length);
                     if (data.trim() === '') {
                         document.getElementById('logViewer').textContent = 'No logs available yet.';
                     } else {
@@ -224,7 +229,8 @@ if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'POST') 
                         document.getElementById('logViewer').scrollTop = document.getElementById('logViewer').scrollHeight;
                     }
                 })
-                .catch(() => {
+                .catch((error) => {
+                    console.error('Fetch logs error:', error);
                     document.getElementById('logViewer').textContent = 'Failed to load logs.';
                 });
         }

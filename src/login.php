@@ -8,7 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // For demo, hardcoded credentials; replace with config or DB as needed
     $validUser = 'admin';
-    $validPass = 'password123';
+    $validPass = 'password1234';
 
     if ($username === $validUser && $password === $validPass) {
         $_SESSION['logged_in'] = true;
