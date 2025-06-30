@@ -61,6 +61,7 @@ if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'POST') 
         <meta charset="UTF-8" />
         <title>WordPress Migrator - Web UI</title>
         <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet" />
+        <link href="css/footer.css" rel="stylesheet" />
         <style>
             body { font-family: 'Poppins', sans-serif; background: #e6f0ff; color: #003366; margin: 0; padding: 0; }
             .container { max-width: 900px; margin: 20px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px #ccc; display: flex; flex-direction: column; gap: 20px; }
@@ -238,5 +239,8 @@ if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'POST') 
         fetchLogs();
     </script>
 </div>
+<footer style="text-align: center; margin: 20px 0; color: #666; font-size: 0.9rem;">
+    &copy; <?= date('Y') ?> Abdullahi Tijani - <a href="https://github.com/abdullahitijani/" target="_blank" rel="noopener noreferrer" style="color: #0059b3;">GitHub</a>
+</footer>
 </body>
 </html>
