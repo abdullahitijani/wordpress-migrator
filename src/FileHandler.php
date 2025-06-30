@@ -4,10 +4,10 @@ class FileHandler {
     private $ftpConn;
     private $logFile = __DIR__ . '/../logs/migration.log';
 
-    public function connectFTP($host, $user, $pass) {
-        $this->ftpConn = ftp_connect($host);
+    public function connectFTP($host, $user, $pass, $port = 21) {
+        $this->ftpConn = ftp_connect($host, $port);
         if (!$this->ftpConn) {
-            $this->log("❌ FTP connection to $host failed.");
+            $this->log("❌ FTP connection to $host:$port failed.");
             return false;
         }
 

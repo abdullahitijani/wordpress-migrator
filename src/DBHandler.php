@@ -21,15 +21,13 @@ class DBHandler {
 
     public function __construct($sourceConfig, $destConfig) {
         $this->sourceHost = $sourceConfig['host'];
-        $this->sourcePort = $sourceConfig['port'] ?? 22;
-        $this->sourceUser = $sourceConfig['username'];
-        $this->sourcePassword = $sourceConfig['password'];
+        $this->sourcePort = $sourceConfig['port'] ?? 3306; // MySQL default port
+        $this->sourceUser = $sourceConfig['database']['user'];
+        $this->sourcePassword = $sourceConfig['database']['password'];
         $this->sourceDbName = $sourceConfig['database']['name'];
-        $this->sourceDbUser = $sourceConfig['database']['user'];
-        $this->sourceDbPass = $sourceConfig['database']['password'];
 
         $this->destHost = $destConfig['host'];
-        $this->destPort = $destConfig['port'] ?? 22;
+        $this->destPort = $destConfig['port'] ?? 22; // SSH port for destination
         $this->destUser = $destConfig['username'];
         $this->destPassword = $destConfig['password'];
         $this->destDbName = $destConfig['database']['name'];
@@ -42,130 +40,150 @@ class DBHandler {
         file_put_contents($this->logFile, "[$timestamp] $message\n", FILE_APPEND);
     }
 
-    private function sshConnect($host, $port, $user, $password) {
-        $connection = ssh2_connect($host, $port);
-        if (!$connection) {
-            $this->log("❌ SSH connection to $host:$port failed.");
-            return false;
-        }
-        if (!ssh2_auth_password($connection, $user, $password)) {
-            $this->log("❌ SSH authentication failed for user $user on $host.");
-            return false;
-        }
-        return $connection;
-    }
-
-    private function execCommand($connection, $command) {
-        $stream = ssh2_exec($connection, $command);
-        if (!$stream) {
-            $this->log("❌ Failed to execute command: $command");
-            return false;
-        }
-        stream_set_blocking($stream, true);
-        $output = stream_get_contents($stream);
-        fclose($stream);
-        $this->log("✅ Executed command: $command\nOutput: $output");
-        return $output;
-    }
-
     /**
-     * Export the MySQL database on the source server to a SQL dump file.
-     * @param string $dumpFile Path on source server to save the dump
-     * @return bool|string Returns dump file path on success, false on failure
+     * Export the MySQL database remotely by connecting via mysqli and dumping all tables.
+     * Saves the dump locally.
+     * @param string $dumpFile Local path to save the dump
+     * @return bool
      */
     public function exportDatabase($dumpFile) {
-        $conn = $this->sshConnect($this->sourceHost, $this->sourcePort, $this->sourceUser, $this->sourcePassword);
-        if (!$conn) return false;
-
-        $cmd = "mysqldump -u " . escapeshellarg($this->sourceDbUser) .
-            " -p" . escapeshellarg($this->sourceDbPass) .
-            " " . escapeshellarg($this->sourceDbName) .
-            " > " . escapeshellarg($dumpFile);
-
-        $result = $this->execCommand($conn, $cmd);
-        if ($result === false) {
-            $this->log("❌ Database export failed.");
+        $mysqli = new mysqli($this->sourceHost, $this->sourceUser, $this->sourcePassword, $this->sourceDbName, $this->sourcePort);
+        if ($mysqli->connect_error) {
+            $this->log("❌ MySQL connection failed: " . $mysqli->connect_error);
             return false;
         }
-        $this->log("✅ Database exported to $dumpFile on source server.");
-        return $dumpFile;
+
+        $tables = [];
+        $result = $mysqli->query("SHOW TABLES");
+        if (!$result) {
+            $this->log("❌ Failed to list tables: " . $mysqli->error);
+            return false;
+        }
+        while ($row = $result->fetch_array()) {
+            $tables[] = $row[0];
+        }
+
+        $sqlDump = "";
+        foreach ($tables as $table) {
+            $result = $mysqli->query("SHOW CREATE TABLE `$table`");
+            if (!$result) {
+                $this->log("❌ Failed to get create statement for $table: " . $mysqli->error);
+                return false;
+            }
+            $row = $result->fetch_assoc();
+            $sqlDump .= $row['Create Table'] . ";\n\n";
+
+            $result = $mysqli->query("SELECT * FROM `$table`");
+            if (!$result) {
+                $this->log("❌ Failed to select data from $table: " . $mysqli->error);
+                return false;
+            }
+
+            while ($dataRow = $result->fetch_assoc()) {
+                $columns = array_map(function($col) use ($mysqli) {
+                    return "`" . $mysqli->real_escape_string($col) . "`";
+                }, array_keys($dataRow));
+                $values = array_map(function($val) use ($mysqli) {
+                    if ($val === null) return "NULL";
+                    return "'" . $mysqli->real_escape_string($val) . "'";
+                }, array_values($dataRow));
+
+                $sqlDump .= "INSERT INTO `$table` (" . implode(", ", $columns) . ") VALUES (" . implode(", ", $values) . ");\n";
+            }
+            $sqlDump .= "\n";
+        }
+
+        $mysqli->close();
+
+        if (file_put_contents($dumpFile, $sqlDump) === false) {
+            $this->log("❌ Failed to write dump file to $dumpFile");
+            return false;
+        }
+
+        $this->log("✅ Database exported locally to $dumpFile");
+        return true;
     }
 
     /**
-     * Import the MySQL database dump file into the destination server.
+     * Import the MySQL database dump file into the destination server via SSH.
      * @param string $dumpFile Path on destination server where dump file is located
      * @return bool
      */
     public function importDatabase($dumpFile) {
-        $conn = $this->sshConnect($this->destHost, $this->destPort, $this->destUser, $this->destPassword);
-        if (!$conn) return false;
+        $connection = ssh2_connect($this->destHost, $this->destPort);
+        if (!$connection) {
+            $this->log("❌ SSH connection to {$this->destHost}:{$this->destPort} failed.");
+            return false;
+        }
+        if (!ssh2_auth_password($connection, $this->destUser, $this->destPassword)) {
+            $this->log("❌ SSH authentication failed for user {$this->destUser}.");
+            return false;
+        }
 
         $cmd = "mysql -u " . escapeshellarg($this->destDbUser) .
             " -p" . escapeshellarg($this->destDbPass) .
             " " . escapeshellarg($this->destDbName) .
             " < " . escapeshellarg($dumpFile);
 
-        $result = $this->execCommand($conn, $cmd);
-        if ($result === false) {
-            $this->log("❌ Database import failed.");
+        $stream = ssh2_exec($connection, $cmd);
+        if (!$stream) {
+            $this->log("❌ Failed to execute import command.");
             return false;
         }
-        $this->log("✅ Database imported from $dumpFile on destination server.");
+        stream_set_blocking($stream, true);
+        $output = stream_get_contents($stream);
+        fclose($stream);
+
+        $this->log("✅ Database imported from $dumpFile on destination server. Output: $output");
         return true;
     }
 
     /**
-     * Transfer the database dump file from source server to destination server.
-     * @param string $dumpFile Path of dump file on source server
-     * @param string $destPath Path to save dump file on destination server
+     * Upload the local dump file to the destination server via SFTP.
+     * @param string $localDumpFile Local path of dump file
+     * @param string $remoteDumpFile Remote path on destination server
      * @return bool
      */
-    public function transferDumpFile($dumpFile, $destPath) {
-        $conn = $this->sshConnect($this->sourceHost, $this->sourcePort, $this->sourceUser, $this->sourcePassword);
-        if (!$conn) return false;
+    public function uploadDumpFile($localDumpFile, $remoteDumpFile) {
+        $connection = ssh2_connect($this->destHost, $this->destPort);
+        if (!$connection) {
+            $this->log("❌ SSH connection to {$this->destHost}:{$this->destPort} failed.");
+            return false;
+        }
+        if (!ssh2_auth_password($connection, $this->destUser, $this->destPassword)) {
+            $this->log("❌ SSH authentication failed for user {$this->destUser}.");
+            return false;
+        }
 
-        $sftp = ssh2_sftp($conn);
+        $sftp = ssh2_sftp($connection);
         if (!$sftp) {
-            $this->log("❌ Failed to initialize SFTP on source server.");
+            $this->log("❌ Failed to initialize SFTP.");
             return false;
         }
 
-        $stream = fopen("ssh2.sftp://$sftp$dumpFile", 'r');
-        if (!$stream) {
-            $this->log("❌ Failed to open dump file $dumpFile on source server.");
+        $streamIn = fopen($localDumpFile, 'r');
+        if (!$streamIn) {
+            $this->log("❌ Failed to open local dump file $localDumpFile.");
             return false;
         }
 
-        $connDest = $this->sshConnect($this->destHost, $this->destPort, $this->destUser, $this->destPassword);
-        if (!$connDest) {
-            fclose($stream);
+        $streamOut = fopen("ssh2.sftp://$sftp$remoteDumpFile", 'w');
+        if (!$streamOut) {
+            $this->log("❌ Failed to open remote dump file $remoteDumpFile.");
+            fclose($streamIn);
             return false;
         }
 
-        $sftpDest = ssh2_sftp($connDest);
-        if (!$sftpDest) {
-            $this->log("❌ Failed to initialize SFTP on destination server.");
-            fclose($stream);
-            return false;
-        }
-
-        $streamDest = fopen("ssh2.sftp://$sftpDest$destPath", 'w');
-        if (!$streamDest) {
-            $this->log("❌ Failed to open destination file $destPath on destination server.");
-            fclose($stream);
-            return false;
-        }
-
-        $writtenBytes = stream_copy_to_stream($stream, $streamDest);
-        fclose($stream);
-        fclose($streamDest);
+        $writtenBytes = stream_copy_to_stream($streamIn, $streamOut);
+        fclose($streamIn);
+        fclose($streamOut);
 
         if ($writtenBytes === false) {
-            $this->log("❌ Failed to transfer dump file from source to destination.");
+            $this->log("❌ Failed to upload dump file.");
             return false;
         }
 
-        $this->log("✅ Transferred dump file from $dumpFile to $destPath.");
+        $this->log("✅ Uploaded dump file to $remoteDumpFile.");
         return true;
     }
 }

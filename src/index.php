@@ -1,11 +1,13 @@
 <?php
 
-require_once __DIR__ . '/src/FileHandler.php';
-require_once __DIR__ . '/src/DBHandler.php';
-require_once __DIR__ . '/src/CyberPanelAPI.php';
+require_once __DIR__ . '/FileHandler.php';
+require_once __DIR__ . '/DBHandler.php';
+require_once __DIR__ . '/CyberPanelAPI.php';
 
 // Read config
-$config = json_decode(file_get_contents(__DIR__ . '/config/credentials.json'), true);
+// $config = json_decode(file_get_contents(__DIR__ . '/config/credentials.json'), true);
+$config = json_decode(file_get_contents(__DIR__ . '/../config/credentials.json'), true);
+
 
 echo "🚀 Starting WordPress Migration\n";
 
@@ -33,6 +35,18 @@ if ($direction === '1') {
     // CyberPanel to cPanel
     $sourceConfig = $config['cyberpanel'];
     $destConfig = $config['cpanel'];
+}
+
+$ftpPort = $sourceConfig['port'] ?? 21; // default FTP port
+
+// Initialize FileHandler and connect FTP for source server if direction is cPanel to CyberPanel
+if ($direction === '1') {
+    $fileHandler = new FileHandler();
+    if (!$fileHandler->connectFTP($sourceConfig['host'], $sourceConfig['username'], $sourceConfig['password'], $ftpPort)) {
+        echo "❌ Failed to connect to source FTP server.\n";
+        exit(1);
+    }
+    $fileHandler->downloadFiles($sourceDir, __DIR__ . '/../backup');
 }
 
 // Initialize CyberPanelAPI for destination server
@@ -70,22 +84,22 @@ echo "✅ File transfer completed.\n";
 // Initialize DBHandler
 $dbHandler = new DBHandler($sourceConfig, $destConfig);
 
-// Export database on source server
-$dumpFile = "/tmp/wordpress_db_dump.sql";
+// Export database locally
+$dumpFile = __DIR__ . '/../backup/wordpress_db_dump.sql';
 if (!$dbHandler->exportDatabase($dumpFile)) {
     echo "❌ Database export failed.\n";
     exit(1);
 }
 
-// Transfer database dump file
-$destDumpFile = "/tmp/wordpress_db_dump.sql";
-if (!$dbHandler->transferDumpFile($dumpFile, $destDumpFile)) {
-    echo "❌ Database dump file transfer failed.\n";
+// Upload dump file to destination server
+$remoteDumpFile = "/tmp/wordpress_db_dump.sql";
+if (!$dbHandler->uploadDumpFile($dumpFile, $remoteDumpFile)) {
+    echo "❌ Database dump file upload failed.\n";
     exit(1);
 }
 
 // Import database on destination server
-if (!$dbHandler->importDatabase($destDumpFile)) {
+if (!$dbHandler->importDatabase($remoteDumpFile)) {
     echo "❌ Database import failed.\n";
     exit(1);
 }
