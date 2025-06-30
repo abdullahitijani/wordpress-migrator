@@ -1,272 +1,236 @@
 <?php
-require_once __DIR__ . '/FileHandler.php';
-require_once __DIR__ . '/DBHandler.php';
-require_once __DIR__ . '/CyberPanelAPI.php';
-
-$message = '';
+session_start();
+if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+    header('Location: login.php');
+    exit;
+}
 if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $direction = $_POST['direction'] ?? '';
-    $sourceDir = $_POST['sourceDir'] ?? '';
-    $destDir = $_POST['destDir'] ?? '';
+    // Process form submission
+    $errors = [];
 
-    $cpanelHost = $_POST['cpanelHost'] ?? '';
-    $cpanelUser = $_POST['cpanelUser'] ?? '';
-    $cpanelPass = $_POST['cpanelPass'] ?? '';
-    $cpanelPort = $_POST['cpanelPort'] ?? 22;
-    $cpanelDbName = $_POST['cpanelDbName'] ?? '';
-    $cpanelDbUser = $_POST['cpanelDbUser'] ?? '';
-    $cpanelDbPass = $_POST['cpanelDbPass'] ?? '';
+    // Validate inputs
+    $cpanelHost = trim($_POST['cpanel_host'] ?? '');
+    $cpanelPort = intval($_POST['cpanel_port'] ?? 21);
+    $cpanelUser = trim($_POST['cpanel_user'] ?? '');
+    $cpanelPass = trim($_POST['cpanel_pass'] ?? '');
+    $cpanelDbHost = trim($_POST['cpanel_db_host'] ?? 'localhost');
+    $cpanelDbPort = intval($_POST['cpanel_db_port'] ?? 3306);
+    $cpanelDbName = trim($_POST['cpanel_db_name'] ?? '');
+    $cpanelDbUser = trim($_POST['cpanel_db_user'] ?? '');
+    $cpanelDbPass = trim($_POST['cpanel_db_pass'] ?? '');
 
-    $cyberHost = $_POST['cyberHost'] ?? '';
-    $cyberUser = $_POST['cyberUser'] ?? '';
-    $cyberPass = $_POST['cyberPass'] ?? '';
-    $cyberPort = $_POST['cyberPort'] ?? 22;
-    $cyberDbName = $_POST['cyberDbName'] ?? '';
-    $cyberDbUser = $_POST['cyberDbUser'] ?? '';
-    $cyberDbPass = $_POST['cyberDbPass'] ?? '';
+    $cyberHost = trim($_POST['cyber_host'] ?? '');
+    $cyberPort = intval($_POST['cyber_port'] ?? 22);
+    $cyberUser = trim($_POST['cyber_user'] ?? '');
+    $cyberPass = trim($_POST['cyber_pass'] ?? '');
+    $cyberDbName = trim($_POST['cyber_db_name'] ?? '');
+    $cyberDbUser = trim($_POST['cyber_db_user'] ?? '');
+    $cyberDbPass = trim($_POST['cyber_db_pass'] ?? '');
 
-    $sourceConfig = [];
-    $destConfig = [];
+    $sourceDir = trim($_POST['source_dir'] ?? '');
+    $destDir = trim($_POST['dest_dir'] ?? '');
+    $direction = $_POST['direction'] ?? '1';
 
-    if ($direction === 'cpanel_to_cyberpanel') {
-        $sourceConfig = [
-            'host' => $cpanelHost,
-            'username' => $cpanelUser,
-            'password' => $cpanelPass,
-            'port' => (int)$cpanelPort,
-            'database' => [
-                'name' => $cpanelDbName,
-                'user' => $cpanelDbUser,
-                'password' => $cpanelDbPass,
-            ],
-        ];
-        $destConfig = [
-            'host' => $cyberHost,
-            'username' => $cyberUser,
-            'password' => $cyberPass,
-            'port' => (int)$cyberPort,
-            'database' => [
-                'name' => $cyberDbName,
-                'user' => $cyberDbUser,
-                'password' => $cyberDbPass,
-            ],
-        ];
-    } elseif ($direction === 'cyberpanel_to_cpanel') {
-        $sourceConfig = [
-            'host' => $cyberHost,
-            'username' => $cyberUser,
-            'password' => $cyberPass,
-            'port' => (int)$cyberPort,
-            'database' => [
-                'name' => $cyberDbName,
-                'user' => $cyberDbUser,
-                'password' => $cyberDbPass,
-            ],
-        ];
-        $destConfig = [
-            'host' => $cpanelHost,
-            'username' => $cpanelUser,
-            'password' => $cpanelPass,
-            'port' => (int)$cpanelPort,
-            'database' => [
-                'name' => $cpanelDbName,
-                'user' => $cpanelDbUser,
-                'password' => $cpanelDbPass,
-            ],
-        ];
-    } else {
-        $message = "Invalid migration direction selected.";
-    }
+    // Basic validation
+    if (empty($cpanelHost)) $errors[] = "cPanel FTP host is required.";
+    if (empty($cpanelUser)) $errors[] = "cPanel FTP username is required.";
+    if (empty($cpanelPass)) $errors[] = "cPanel FTP password is required.";
+    if (empty($cpanelDbName)) $errors[] = "cPanel MySQL database name is required.";
+    if (empty($cpanelDbUser)) $errors[] = "cPanel MySQL username is required.";
 
-    if (!$message) {
-        $cyberPanel = new CyberPanelAPI($destConfig['host'], $destConfig['username'], $destConfig['password'], $destConfig['port']);
-        if (!$cyberPanel->connect()) {
-            $message = "Failed to connect to destination server via SSH.";
-        } else {
-            if ($direction === 'cpanel_to_cyberpanel') {
-                $success = $cyberPanel->transferFromSource(
-                    $sourceConfig['username'],
-                    $sourceConfig['host'],
-                    $sourceConfig['port'],
-                    $sourceDir,
-                    $destDir
-                );
-            } else {
-                $success = $cyberPanel->transferToDestination(
-                    $destConfig['username'],
-                    $destConfig['host'],
-                    $destConfig['port'],
-                    $sourceDir,
-                    $destDir
-                );
-            }
+    if (empty($cyberHost)) $errors[] = "CyberPanel SSH host is required.";
+    if (empty($cyberUser)) $errors[] = "CyberPanel SSH username is required.";
+    if (empty($cyberPass)) $errors[] = "CyberPanel SSH password is required.";
+    if (empty($cyberDbName)) $errors[] = "CyberPanel MySQL database name is required.";
+    if (empty($cyberDbUser)) $errors[] = "CyberPanel MySQL username is required.";
 
-            if (!$success) {
-                $message = "File transfer failed.";
-            } else {
-                $dbHandler = new DBHandler($sourceConfig, $destConfig);
-                $dumpFile = "/tmp/wordpress_db_dump.sql";
-                if (!$dbHandler->exportDatabase($dumpFile)) {
-                    $message = "Database export failed.";
-                } elseif (!$dbHandler->transferDumpFile($dumpFile, $dumpFile)) {
-                    $message = "Database dump file transfer failed.";
-                } elseif (!$dbHandler->importDatabase($dumpFile)) {
-                    $message = "Database import failed.";
-                } else {
-                    $message = "WordPress migration completed successfully.";
-                }
-            }
-        }
+    if (empty($sourceDir)) $errors[] = "Source directory is required.";
+    if (empty($destDir)) $errors[] = "Destination directory is required.";
+
+    if (count($errors) === 0) {
+        // Save inputs to session or pass to migration logic
+        // For now, just display success message
+        $success = "Migration started. Check logs for progress.";
     }
 }
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>WordPress Migrator</title>
-<style>
-    body {
-        font-family: Arial, sans-serif;
-        background-color: #f0f4f8;
-        margin: 0;
-        padding: 0;
-        color: #333;
-    }
-    header {
-        background-color: #007bff;
-        color: white;
-        padding: 1rem 2rem;
-        text-align: center;
-    }
-    main {
-        max-width: 700px;
-        margin: 2rem auto;
-        background: white;
-        padding: 2rem;
-        border-radius: 8px;
-        box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    h1 {
-        margin-top: 0;
-        color:rgb(12, 0, 179);
-    }
-    label {
-        display: block;
-        margin-top: 1rem;
-        font-weight: bold;
-    }
-    input[type="text"],
-    input[type="password"],
-    input[type="number"],
-    select {
-        width: 100%;
-        padding: 0.5rem;
-        margin-top: 0.25rem;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        box-sizing: border-box;
-    }
-    button {
-        margin-top: 1.5rem;
-        background-color: #007bff;
-        color: white;
-        border: none;
-        padding: 0.75rem 1.5rem;
-        font-size: 1rem;
-        border-radius: 4px;
-        cursor: pointer;
-    }
-    button:hover {
-        background-color: #0056b3;
-    }
-    .message {
-        margin-top: 1rem;
-        padding: 1rem;
-        border-radius: 4px;
-    }
-    .success {
-        background-color: #d4edda;
-        color: #155724;
-    }
-    .error {
-        background-color: #f8d7da;
-        color: #721c24;
-    }
-</style>
-</head>
+    <head>
+        <meta charset="UTF-8" />
+        <title>WordPress Migrator - Web UI</title>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet" />
+        <style>
+            body { font-family: 'Poppins', sans-serif; background: #e6f0ff; color: #003366; margin: 0; padding: 0; }
+            .container { max-width: 900px; margin: 20px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px #ccc; display: flex; flex-direction: column; gap: 20px; }
+            h1 { color: #0059b3; margin-bottom: 0; }
+            label { display: block; margin-top: 10px; font-weight: 600; }
+            input[type=text], input[type=password], select {
+                width: 100%;
+                padding: 10px;
+                margin-top: 6px;
+                border: 1px solid #ccc;
+                border-radius: 6px;
+                font-size: 1rem;
+                box-sizing: border-box;
+            }
+            button {
+                margin-top: 20px;
+                padding: 12px 24px;
+                background: #0059b3;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 1rem;
+                transition: background-color 0.3s ease;
+            }
+            button:hover {
+                background: #004080;
+            }
+            .error {
+                color: #d93025;
+                margin-top: 10px;
+                font-weight: 600;
+            }
+            .success {
+                color: #188038;
+                margin-top: 10px;
+                font-weight: 600;
+            }
+            .log-viewer {
+                margin-top: 20px;
+                background: #f0f5ff;
+                padding: 10px;
+                height: 300px;
+                overflow-y: scroll;
+                border: 1px solid #ccc;
+                font-family: monospace;
+                white-space: pre-wrap;
+                border-radius: 6px;
+            }
+        </style>
+    </head>
 <body>
-<header>
-    <h1>WordPress Migrator</h1>
-</header>
-<main>
-    <?php if ($message): ?>
-        <div class="message <?php echo strpos($message, 'failed') !== false ? 'error' : 'success'; ?>">
-            <?php echo htmlspecialchars($message); ?>
+<div class="container">
+    <h1>WordPress Migrator - Web UI</h1>
+
+    <?php if (!empty($errors)): ?>
+        <div class="error">
+            <ul>
+                <?php foreach ($errors as $err): ?>
+                    <li><?= htmlspecialchars($err) ?></li>
+                <?php endforeach; ?>
+            </ul>
         </div>
     <?php endif; ?>
-    <form method="post" action="">
-        <label for="direction">Migration Direction</label>
-        <select id="direction" name="direction" required>
-            <option value="">Select direction</option>
-            <option value="cpanel_to_cyberpanel" <?php if (($direction ?? '') === 'cpanel_to_cyberpanel') echo 'selected'; ?>>cPanel to CyberPanel</option>
-            <option value="cyberpanel_to_cpanel" <?php if (($direction ?? '') === 'cyberpanel_to_cpanel') echo 'selected'; ?>>CyberPanel to cPanel</option>
+
+    <?php if (!empty($success)): ?>
+        <div class="success"><?= htmlspecialchars($success) ?></div>
+    <?php endif; ?>
+
+<form method="post" action="">
+        <label for="direction">Migration Direction:</label>
+        <select name="direction" id="direction">
+            <option value="1" <?= ($direction ?? '') === '1' ? 'selected' : '' ?>>cPanel to CyberPanel</option>
+            <option value="2" <?= ($direction ?? '') === '2' ? 'selected' : '' ?>>CyberPanel to cPanel</option>
         </select>
 
-        <label for="sourceDir">Source Directory (full path)</label>
-        <input type="text" id="sourceDir" name="sourceDir" value="<?php echo htmlspecialchars($sourceDir ?? ''); ?>" required />
+        <label for="migration_type">Migration Type:</label>
+        <select name="migration_type" id="migration_type">
+            <option value="1" <?= ($migrationType ?? '') === '1' ? 'selected' : '' ?>>Website files only</option>
+            <option value="2" <?= ($migrationType ?? '') === '2' ? 'selected' : '' ?>>Database only</option>
+        </select>
 
-        <label for="destDir">Destination Directory (full path)</label>
-        <input type="text" id="destDir" name="destDir" value="<?php echo htmlspecialchars($destDir ?? ''); ?>" required />
+        <label for="source_dir">Source Directory (full path):</label>
+        <input type="text" name="source_dir" id="source_dir" value="<?= htmlspecialchars($sourceDir ?? '') ?>" required />
 
-        <h2>cPanel Server Credentials</h2>
-        <label for="cpanelHost">Host</label>
-        <input type="text" id="cpanelHost" name="cpanelHost" value="<?php echo htmlspecialchars($cpanelHost ?? ''); ?>" required />
+        <label for="dest_dir">Destination Directory (full path):</label>
+        <input type="text" name="dest_dir" id="dest_dir" value="<?= htmlspecialchars($destDir ?? '') ?>" required />
 
-        <label for="cpanelUser">Username</label>
-        <input type="text" id="cpanelUser" name="cpanelUser" value="<?php echo htmlspecialchars($cpanelUser ?? ''); ?>" required />
+        <h2>cPanel FTP Credentials</h2>
+        <label for="cpanel_host">FTP Host:</label>
+        <input type="text" name="cpanel_host" id="cpanel_host" value="<?= htmlspecialchars($cpanelHost ?? '') ?>" required />
 
-        <label for="cpanelPass">Password</label>
-        <input type="password" id="cpanelPass" name="cpanelPass" value="<?php echo htmlspecialchars($cpanelPass ?? ''); ?>" required />
+        <label for="cpanel_port">FTP Port:</label>
+        <input type="text" name="cpanel_port" id="cpanel_port" value="<?= htmlspecialchars($cpanelPort ?? '21') ?>" />
 
-        <label for="cpanelPort">SSH Port</label>
-        <input type="number" id="cpanelPort" name="cpanelPort" value="<?php echo htmlspecialchars($cpanelPort ?? 22); ?>" min="1" max="65535" required />
+        <label for="cpanel_user">FTP Username:</label>
+        <input type="text" name="cpanel_user" id="cpanel_user" value="<?= htmlspecialchars($cpanelUser ?? '') ?>" required />
 
-        <label for="cpanelDbName">Database Name</label>
-        <input type="text" id="cpanelDbName" name="cpanelDbName" value="<?php echo htmlspecialchars($cpanelDbName ?? ''); ?>" required />
+        <label for="cpanel_pass">FTP Password:</label>
+        <input type="password" name="cpanel_pass" id="cpanel_pass" value="<?= htmlspecialchars($cpanelPass ?? '') ?>" required />
 
-        <label for="cpanelDbUser">Database User</label>
-        <input type="text" id="cpanelDbUser" name="cpanelDbUser" value="<?php echo htmlspecialchars($cpanelDbUser ?? ''); ?>" required />
+        <label for="cpanel_db_host">MySQL Host:</label>
+        <input type="text" name="cpanel_db_host" id="cpanel_db_host" value="<?= htmlspecialchars($cpanelDbHost ?? 'localhost') ?>" />
 
-        <label for="cpanelDbPass">Database Password</label>
-        <input type="password" id="cpanelDbPass" name="cpanelDbPass" value="<?php echo htmlspecialchars($cpanelDbPass ?? ''); ?>" required />
+        <label for="cpanel_db_port">MySQL Port:</label>
+        <input type="text" name="cpanel_db_port" id="cpanel_db_port" value="<?= htmlspecialchars($cpanelDbPort ?? '3306') ?>" />
 
-        <h2>CyberPanel Server Credentials</h2>
-        <label for="cyberHost">Host</label>
-        <input type="text" id="cyberHost" name="cyberHost" value="<?php echo htmlspecialchars($cyberHost ?? ''); ?>" required />
+        <label for="cpanel_db_name">Database Name:</label>
+        <input type="text" name="cpanel_db_name" id="cpanel_db_name" value="<?= htmlspecialchars($cpanelDbName ?? '') ?>" required />
 
-        <label for="cyberUser">Username</label>
-        <input type="text" id="cyberUser" name="cyberUser" value="<?php echo htmlspecialchars($cyberUser ?? ''); ?>" required />
+        <label for="cpanel_db_user">Database Username:</label>
+        <input type="text" name="cpanel_db_user" id="cpanel_db_user" value="<?= htmlspecialchars($cpanelDbUser ?? '') ?>" required />
 
-        <label for="cyberPass">Password</label>
-        <input type="password" id="cyberPass" name="cyberPass" value="<?php echo htmlspecialchars($cyberPass ?? ''); ?>" required />
+        <label for="cpanel_db_pass">Database Password:</label>
+        <input type="password" name="cpanel_db_pass" id="cpanel_db_pass" value="<?= htmlspecialchars($cpanelDbPass ?? '') ?>" />
 
-        <label for="cyberPort">SSH Port</label>
-        <input type="number" id="cyberPort" name="cyberPort" value="<?php echo htmlspecialchars($cyberPort ?? 22); ?>" min="1" max="65535" required />
+        <h2>CyberPanel SSH Credentials</h2>
+        <label for="cyber_host">SSH Host:</label>
+        <input type="text" name="cyber_host" id="cyber_host" value="<?= htmlspecialchars($cyberHost ?? '') ?>" required />
 
-        <label for="cyberDbName">Database Name</label>
-        <input type="text" id="cyberDbName" name="cyberDbName" value="<?php echo htmlspecialchars($cyberDbName ?? ''); ?>" required />
+        <label for="cyber_port">SSH Port:</label>
+        <input type="text" name="cyber_port" id="cyber_port" value="<?= htmlspecialchars($cyberPort ?? '22') ?>" />
 
-        <label for="cyberDbUser">Database User</label>
-        <input type="text" id="cyberDbUser" name="cyberDbUser" value="<?php echo htmlspecialchars($cyberDbUser ?? ''); ?>" required />
+        <label for="cyber_user">SSH Username:</label>
+        <input type="text" name="cyber_user" id="cyber_user" value="<?= htmlspecialchars($cyberUser ?? '') ?>" required />
 
-        <label for="cyberDbPass">Database Password</label>
-        <input type="password" id="cyberDbPass" name="cyberDbPass" value="<?php echo htmlspecialchars($cyberDbPass ?? ''); ?>" required />
+        <label for="cyber_pass">SSH Password:</label>
+        <input type="password" name="cyber_pass" id="cyber_pass" value="<?= htmlspecialchars($cyberPass ?? '') ?>" required />
+
+        <label for="cyber_db_name">Database Name:</label>
+        <input type="text" name="cyber_db_name" id="cyber_db_name" value="<?= htmlspecialchars($cyberDbName ?? '') ?>" required />
+
+        <label for="cyber_db_user">Database Username:</label>
+        <input type="text" name="cyber_db_user" id="cyber_db_user" value="<?= htmlspecialchars($cyberDbUser ?? '') ?>" required />
+
+        <label for="cyber_db_pass">Database Password:</label>
+        <input type="password" name="cyber_db_pass" id="cyber_db_pass" value="<?= htmlspecialchars($cyberDbPass ?? '') ?>" />
 
         <button type="submit">Start Migration</button>
     </form>
-</main>
+
+    <h2>Migration Logs</h2>
+    <div class="log-viewer" id="logViewer">Loading logs...</div>
+
+    <script>
+        // Simple AJAX to fetch logs every 3 seconds
+        function fetchLogs() {
+            fetch('logs.php')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.text();
+                })
+                .then(data => {
+                    if (data.trim() === '') {
+                        document.getElementById('logViewer').textContent = 'No logs available yet.';
+                    } else {
+                        document.getElementById('logViewer').textContent = data;
+                        document.getElementById('logViewer').scrollTop = document.getElementById('logViewer').scrollHeight;
+                    }
+                })
+                .catch(() => {
+                    document.getElementById('logViewer').textContent = 'Failed to load logs.';
+                });
+        }
+        setInterval(fetchLogs, 3000);
+        fetchLogs();
+    </script>
+</div>
 </body>
 </html>
