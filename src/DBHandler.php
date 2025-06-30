@@ -19,6 +19,8 @@ class DBHandler {
     private $destDbUser;
     private $destDbPass;
 
+    private $lastSyncFile;
+
     public function __construct($sourceConfig, $destConfig) {
         $this->sourceHost = $sourceConfig['host'];
         $this->sourcePort = $sourceConfig['port'] ?? 3306; // MySQL default port
@@ -33,6 +35,8 @@ class DBHandler {
         $this->destDbName = $destConfig['database']['name'];
         $this->destDbUser = $destConfig['database']['user'];
         $this->destDbPass = $destConfig['database']['password'];
+
+        $this->lastSyncFile = __DIR__ . '/../backup/last_db_sync.txt';
     }
 
     private function log($message) {
@@ -40,12 +44,6 @@ class DBHandler {
         file_put_contents($this->logFile, "[$timestamp] $message\n", FILE_APPEND);
     }
 
-    /**
-     * Export the MySQL database remotely by connecting via mysqli and dumping all tables.
-     * Saves the dump locally.
-     * @param string $dumpFile Local path to save the dump
-     * @return bool
-     */
     public function exportDatabase($dumpFile) {
         $mysqli = new mysqli($this->sourceHost, $this->sourceUser, $this->sourcePassword, $this->sourceDbName, $this->sourcePort);
         if ($mysqli->connect_error) {
@@ -104,11 +102,82 @@ class DBHandler {
         return true;
     }
 
-    /**
-     * Import the MySQL database dump file into the destination server via SSH.
-     * @param string $dumpFile Path on destination server where dump file is located
-     * @return bool
-     */
+    public function exportIncrementalDatabase($dumpFile) {
+        $lastSync = 0;
+        if (file_exists($this->lastSyncFile)) {
+            $lastSync = (int)file_get_contents($this->lastSyncFile);
+        }
+        $mysqli = new mysqli($this->sourceHost, $this->sourceUser, $this->sourcePassword, $this->sourceDbName, $this->sourcePort);
+        if ($mysqli->connect_error) {
+            $this->log("❌ MySQL connection failed: " . $mysqli->connect_error);
+            return false;
+        }
+
+        $tables = [];
+        $result = $mysqli->query("SHOW TABLES");
+        if (!$result) {
+            $this->log("❌ Failed to list tables: " . $mysqli->error);
+            return false;
+        }
+        while ($row = $result->fetch_array()) {
+            $tables[] = $row[0];
+        }
+
+        $sqlDump = "";
+        foreach ($tables as $table) {
+            $result = $mysqli->query("SHOW CREATE TABLE `$table`");
+            if (!$result) {
+                $this->log("❌ Failed to get create statement for $table: " . $mysqli->error);
+                return false;
+            }
+            $row = $result->fetch_assoc();
+            $sqlDump .= $row['Create Table'] . ";\n\n";
+
+            $hasUpdatedAt = false;
+            $columnsResult = $mysqli->query("SHOW COLUMNS FROM `$table` LIKE 'updated_at'");
+            if ($columnsResult && $columnsResult->num_rows > 0) {
+                $hasUpdatedAt = true;
+            }
+
+            if ($hasUpdatedAt) {
+                $result = $mysqli->query("SELECT * FROM `$table` WHERE UNIX_TIMESTAMP(updated_at) > $lastSync");
+            } else {
+                $result = $mysqli->query("SELECT * FROM `$table`");
+            }
+
+            if (!$result) {
+                $this->log("❌ Failed to select data from $table: " . $mysqli->error);
+                return false;
+            }
+
+            while ($dataRow = $result->fetch_assoc()) {
+                $columns = array_map(function($col) use ($mysqli) {
+                    return "`" . $mysqli->real_escape_string($col) . "`";
+                }, array_keys($dataRow));
+                $values = array_map(function($val) use ($mysqli) {
+                    if ($val === null) return "NULL";
+                    return "'" . $mysqli->real_escape_string($val) . "'";
+                }, array_values($dataRow));
+
+                $sqlDump .= "INSERT INTO `$table` (" . implode(", ", $columns) . ") VALUES (" . implode(", ", $values) . ") ON DUPLICATE KEY UPDATE " .
+                    implode(", ", array_map(function($col) { return "$col=VALUES($col)"; }, $columns)) . ";\n";
+            }
+            $sqlDump .= "\n";
+        }
+
+        $mysqli->close();
+
+        if (file_put_contents($dumpFile, $sqlDump) === false) {
+            $this->log("❌ Failed to write dump file to $dumpFile");
+            return false;
+        }
+
+        file_put_contents($this->lastSyncFile, time());
+
+        $this->log("✅ Incremental database exported locally to $dumpFile");
+        return true;
+    }
+
     public function importDatabase($dumpFile) {
         $connection = ssh2_connect($this->destHost, $this->destPort);
         if (!$connection) {
@@ -138,12 +207,6 @@ class DBHandler {
         return true;
     }
 
-    /**
-     * Upload the local dump file to the destination server via SFTP.
-     * @param string $localDumpFile Local path of dump file
-     * @param string $remoteDumpFile Remote path on destination server
-     * @return bool
-     */
     public function uploadDumpFile($localDumpFile, $remoteDumpFile) {
         $connection = ssh2_connect($this->destHost, $this->destPort);
         if (!$connection) {

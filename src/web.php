@@ -120,6 +120,10 @@ if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'POST') 
         <a href="logout.php" style="color: white; font-weight: 600; text-decoration: none; background-color: #0059b3; padding: 6px 12px; border-radius: 6px; transition: background-color 0.3s ease;">Logout</a>
     </div>
     <h1>WordPress Migrator - Web UI</h1>
+    <form method="post" action="">
+        <button type="submit" name="action" value="incremental_file_sync" style="margin-right: 10px; padding: 10px 20px; background-color: #0059b3; color: white; border: none; border-radius: 6px; cursor: pointer;">Incremental File Sync</button>
+        <button type="submit" name="action" value="incremental_db_sync" style="padding: 10px 20px; background-color: #0059b3; color: white; border: none; border-radius: 6px; cursor: pointer;">Incremental DB Sync</button>
+    </form>
 
     <?php if (!empty($errors)): ?>
         <div class="error">

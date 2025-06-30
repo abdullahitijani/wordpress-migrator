@@ -12,6 +12,13 @@ A PHP CLI and Web UI tool to automate migrating a WordPress website between cPan
 - Bidirectional migration: cPanel to CyberPanel and vice versa
 - Clean logging of migration steps and errors
 - CLI and Web UI interfaces for flexibility
+- Incremental file sync to download only changed files
+- Incremental database sync to export/import only changed data
+- Backup integration to create backups before migration
+- Email and Slack notifications for migration status and errors
+- Support for WordPress multisite migration
+- Rollback and retry options for failed migrations
+- Detailed migration reports with success/failure logs and metrics
 
 ---
 
@@ -66,9 +73,11 @@ php -S localhost:8000 -t src
 
 2. Open your browser and navigate to `http://localhost:8000/web.php`.
 
-3. Fill in the migration form with server details, directories, and credentials.
+3. Use the new buttons to trigger **Incremental File Sync** and **Incremental DB Sync** for efficient migration.
 
-4. Click **Start Migration** to begin.
+4. Fill in the migration form with server details, directories, and credentials.
+
+5. Click **Start Migration** to begin.
 
 ---
 
@@ -117,6 +126,7 @@ Migration logs are saved to `logs/migration.log`. Check this file for detailed p
 - Test migration on a staging environment before production.
 - The tool currently supports username/password SSH authentication; SSH key support may be added in the future.
 - The tool requires `rsync` and MySQL client tools installed on both servers.
+- Use the Web UI buttons for incremental syncs to minimize downtime during migration.
 
 ---
 
