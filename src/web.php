@@ -151,7 +151,7 @@ if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'POST') 
     }
     h1 {
         margin-top: 0;
-        color: #0056b3;
+        color:rgb(12, 0, 179);
     }
     label {
         display: block;
