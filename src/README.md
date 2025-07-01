@@ -1,25 +1,17 @@
-# WordPress Migrator CLI (v1)
+# Source Code
 
-This CLI tool automates downloading a WordPress website from a cPanel server via FTP. Future versions will include database export, CyberPanel import, and smart AI-based configurations.
+This directory contains the source code files for the WordPress Migrator project.
 
----
+## Web UI Components
 
-## 🚀 Features (v1)
+The following files provide web UI functionality and are excluded from the CLI-only version 1.0.0 release:
 
-- Connects to cPanel via FTP
-- Recursively downloads WordPress site files from `public_html`
-- Logs progress and errors to a file
-- Designed for easy extension to full migration workflows
+- login.php
+- logout.php
+- index.php
+- footer.php
+- css/footer.css
 
----
+## CLI Components
 
-## 📦 Setup Instructions
-
-1. **Clone the repository**
-
-```bash
-git clone https://github.com/your-username/wordpress-migrator.git
-cd wordpress-migrator
-
-
-
+The CLI migration tool is located in `website-migrator-beta/migrate.php` and related backend classes in this directory.

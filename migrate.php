@@ -1,10 +1,14 @@
 <?php
-require_once __DIR__ . '/../src/FileHandler.php';
-require_once __DIR__ . '/../src/DBHandler.php';
-require_once __DIR__ . '/../src/CyberPanelAPI.php';
+// Version 1.0.0 - Local CLI migration tool, no web UI exposure
+define('MIGRATOR_VERSION', '1.0.0');
 
-echo "WordPress Migrator Beta CLI\n";
-echo "===========================\n\n";
+require_once __DIR__ . '/src/FileHandler.php';
+require_once __DIR__ . '/src/DBHandler.php';
+require_once __DIR__ . '/src/CyberPanelAPI.php';
+
+// CLI only output
+echo "WordPress Migrator CLI Version " . MIGRATOR_VERSION . "\n";
+echo "====================================\n\n";
 
 $handle = fopen("php://stdin", "r");
 
@@ -32,7 +36,7 @@ function loadEnv($path) {
     return $env;
 }
 
-$env = loadEnv(__DIR__ . '/.env');
+$env = loadEnv(__DIR__ . '/config/.env');
 
 $direction = prompt(
     "Select migration direction:\n(1) cPanel to CyberPanel\n(2) CyberPanel to cPanel",

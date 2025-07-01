@@ -1,8 +1,68 @@
 # WordPress Migrator
 
-A PHP CLI and Web UI tool to automate migrating a WordPress website between cPanel and CyberPanel servers.
+## Version 1.0.0 - CLI Local Release
+
+This release provides a command-line interface (CLI) tool for migrating WordPress sites between cPanel and CyberPanel servers. It does not include any web UI components and is intended for local use only.
 
 ---
+
+## Features
+
+- Direct streaming of WordPress site zip files between servers without local intermediate storage.
+- Database export and import with credential checks.
+- User prompts for flexible migration configuration.
+
+---
+
+## Requirements
+
+- PHP 7.4 or higher
+- PHP ssh2 extension installed and enabled
+- SSH access with username/password to both source and destination servers
+- rsync installed on both servers
+- MySQL client tools (`mysqldump`, `mysql`) installed on both servers
+
+---
+
+## Installation
+
+1. Clone or download this repository.
+
+2. Install the PHP ssh2 extension:
+
+   ```bash
+   # macOS with Homebrew
+   brew install libssh2
+   pecl install ssh2
+
+   # Enable extension in php.ini
+   echo "extension=ssh2.so" >> $(php --ini | grep "Loaded Configuration" | sed -e "s|.*:\s*||")
+   ```
+
+3. Configure your credentials in `config/credentials.json` or use the CLI prompts to input them.
+
+---
+
+## Usage
+
+Run the migration script from the command line:
+
+```bash
+php website-migrator-beta/migrate.php
+```
+
+Follow the prompts to enter source and destination server details and migration options.
+
+---
+
+## Notes
+
+- This version excludes any web UI components.
+- Future versions may include web UI and additional features.
+
+---
+php website-migrator-beta/migrate.php
+   echo "extension=ssh2.so" >> $(php --ini | grep "Loaded Configuration" | sed -e "s|.*:\s*||")
 
 ## Features
 
