@@ -48,7 +48,7 @@ This release provides a command-line interface (CLI) tool for migrating WordPres
 Run the migration script from the command line:
 
 ```bash
-php website-migrator-beta/migrate.php
+php migrate.php
 ```
 
 Follow the prompts to enter source and destination server details and migration options.
@@ -58,11 +58,14 @@ Follow the prompts to enter source and destination server details and migration 
 ## Notes
 
 - This version excludes any web UI components.
-- Future versions may include web UI and additional features.
+- Future versions may include web UI and additional features, such as:
+  - Web-based user interface for easier configuration and monitoring
+  - Support for SSH key authentication
+  - Incremental file and database synchronization improvements
+  - Enhanced error handling and logging
+  - Support for additional hosting control panels
 
 ---
-php website-migrator-beta/migrate.php
-   echo "extension=ssh2.so" >> $(php --ini | grep "Loaded Configuration" | sed -e "s|.*:\s*||")
 
 ## Features
 
@@ -127,8 +130,6 @@ Follow the prompts to select migration direction, source/destination directories
 
 This feature works by tracking the last migration time and comparing file modification timestamps or database row update timestamps. Only new or updated files and database entries are transferred, making subsequent migrations faster and minimizing downtime.
 
-
-
 ### Web UI
 
 1. Serve the `src/web.php` file via a PHP-enabled web server (e.g., Apache, Nginx, or PHP built-in server):
@@ -144,7 +145,6 @@ php -S localhost:8000 -t src
 **Incremental Sync:** The Web UI provides dedicated buttons for incremental file and database syncs. Clicking these buttons will transfer only the changed files or database records since the last migration, making the process faster and minimizing downtime.
 
 In the Web UI, you can trigger incremental syncs using the provided buttons labeled "Incremental File Sync" and "Incremental DB Sync". These buttons initiate the transfer of only changed files or database records since the last migration, allowing you to efficiently update your migrated site with minimal downtime.
-
 
 4. Fill in the migration form with server details, directories, and credentials.
 
