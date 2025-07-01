@@ -1,81 +1,29 @@
-# WordPress Migrator
+# WordPress Migrator CLI Tool
 
-## Version 1.0.0 - CLI Local Release
+## Overview
 
-This release provides a command-line interface (CLI) tool for migrating WordPress sites between cPanel and CyberPanel servers. It does not include any web UI components and is intended for local use only.
-
----
+WordPress Migrator is a command-line interface (CLI) tool designed to facilitate the migration of WordPress sites between cPanel and CyberPanel hosting environments. It automates the process of transferring files and databases securely and efficiently.
 
 ## Features
 
-- Direct streaming of WordPress site zip files between servers without local intermediate storage.
-- Database export and import with credential checks.
-- User prompts for flexible migration configuration.
-
----
+- Migrate WordPress files and database from cPanel to CyberPanel and vice versa.
+- Supports FTP and SSH connections for source and destination servers.
+- Automates zipping and transferring WordPress directories.
+- Handles database export, transfer, and import.
+- Logs migration progress for troubleshooting.
 
 ## Requirements
 
-- PHP 7.4 or higher
-- PHP ssh2 extension installed and enabled
-- SSH access with username/password to both source and destination servers
-- rsync installed on both servers
-- MySQL client tools (`mysqldump`, `mysql`) installed on both servers
-
----
+- PHP 8.x with SSH2 and FTP extensions enabled.
+- Access credentials for source and destination servers (FTP and SSH).
+- ZipArchive PHP extension.
+- Network access between source and destination servers.
 
 ## Installation
 
-1. Clone or download this repository.
-
-2. Install the PHP ssh2 extension:
-
-   ```bash
-   # macOS with Homebrew
-   brew install libssh2
-   pecl install ssh2
-
-   # Enable extension in php.ini
-   echo "extension=ssh2.so" >> $(php --ini | grep "Loaded Configuration" | sed -e "s|.*:\s*||")
-   ```
-
-3. Configure your credentials in `config/credentials.json` or use the CLI prompts to input them.
-
----
-
-## Configuration
-
-This version uses a .env configuration file for credentials located at `config/.env`. You can either edit this file directly with your server and database credentials or leave it empty and provide credentials interactively via CLI prompts during migration.
-
-Example `config/.env.example`:
-
-# Copy this file to .env and fill in your credentials
-
-# Source cPanel FTP
-CPANEL_FTP_HOST=
-CPANEL_FTP_PORT=21
-CPANEL_FTP_USER=
-CPANEL_FTP_PASS=
-
-# Destination CyberPanel SSH
-CYBERPANEL_SSH_HOST=
-CYBERPANEL_SSH_PORT=22
-CYBERPANEL_SSH_USER=
-CYBERPANEL_SSH_PASS=
-
-# Source CyberPanel SSH
-SOURCE_CYBERPANEL_SSH_HOST=
-SOURCE_CYBERPANEL_SSH_PORT=22
-SOURCE_CYBERPANEL_SSH_USER=
-SOURCE_CYBERPANEL_SSH_PASS=
-
-# Destination cPanel FTP
-DEST_C_PANEL_FTP_HOST=
-DEST_C_PANEL_FTP_PORT=21
-DEST_C_PANEL_FTP_USER=
-DEST_C_PANEL_FTP_PASS=
-
----
+1. Clone or download the repository.
+2. Ensure PHP CLI is installed and configured.
+3. Configure credentials in `.env` file based on `.env.example` or provide them interactively during migration.
 
 ## Usage
 
@@ -85,28 +33,45 @@ Run the migration script from the command line:
 php migrate.php
 ```
 
-Follow the prompts to enter source and destination server details and migration options.
+The tool will prompt for:
 
----
+- Migration direction:
+  - `1` for cPanel to CyberPanel
+  - `2` for CyberPanel to cPanel
+- Source server credentials (FTP or SSH depending on direction).
+- Destination server credentials.
+- WordPress directory path on the source server.
+- Database credentials for source and destination.
 
-## Notes
+### Example Workflow
 
-- This version excludes any web UI components.
-- Future versions may include web UI and additional features, such as:
-  - Web-based user interface for easier configuration and monitoring
-  - Support for SSH key authentication
-  - Incremental file and database synchronization improvements
-  - Enhanced error handling and logging
-  - Support for additional hosting control panels
+1. Select migration direction.
+2. Enter source server FTP or SSH details.
+3. Enter destination server SSH or FTP details.
+4. Specify the WordPress directory to migrate.
+5. The tool will zip the WordPress files, transfer them, and prompt for manual unzip on the destination.
+6. Database export, transfer, and import will be performed automatically.
+7. Monitor the console output for progress and errors.
 
----
+## Logs
+
+Migration logs are saved in the `logs/migration.log` file. Review this file for detailed information about the migration process and troubleshooting.
+
+## Troubleshooting
+
+- Ensure all credentials are correct and have necessary permissions.
+- Verify network connectivity between source and destination servers.
+- Check PHP extensions for SSH2, FTP, and ZipArchive are installed.
+- Review `logs/migration.log` for error details.
+
+## Contributing
+
+Contributions are welcome. Please fork the repository and submit pull requests.
 
 ## License
 
 MIT License
 
----
+## Contact
 
-## Contributing
-
-Contributions and improvements are welcome! Please open issues or pull requests.
+For support or questions, please open an issue on the repository.
