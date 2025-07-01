@@ -2,3 +2,4 @@
 config/credentials.json
 logs/
 backup/
+.env
