@@ -22,6 +22,10 @@ class FileHandler {
         return true;
     }
 
+    public function getFtpConnection() {
+        return $this->ftpConn;
+    }
+
     public function downloadFiles($remoteDir = "public_html", $localDir = __DIR__ . '/../backup/') {
         if (!is_dir($localDir)) {
             mkdir($localDir, 0755, true);
@@ -33,6 +37,10 @@ class FileHandler {
 
     private function recursiveDownload($remoteDir, $localDir) {
         $files = ftp_nlist($this->ftpConn, $remoteDir);
+        if ($files === false) {
+            $this->log("❌ Failed to list files in directory: $remoteDir");
+            return;
+        }
         foreach ($files as $file) {
             $basename = basename($file);
             $localPath = $localDir . '/' . $basename;

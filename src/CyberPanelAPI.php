@@ -32,6 +32,10 @@ class CyberPanelAPI {
         return true;
     }
 
+    public function getSftpResource() {
+        return $this->sftp;
+    }
+
     public function execCommand($command) {
         $stream = ssh2_exec($this->connection, $command);
         if (!$stream) {
