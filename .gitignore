@@ -2,4 +2,10 @@
 config/credentials.json
 logs/
 backup/
-.env
+config/.env
+src/web.php
+src/login.php
+src/css/
+src/footer.php
+src/logout.php
+src/info.php
