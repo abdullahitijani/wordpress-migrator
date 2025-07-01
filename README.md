@@ -45,36 +45,35 @@ This release provides a command-line interface (CLI) tool for migrating WordPres
 
 ## Configuration
 
-This version uses a JSON configuration file for credentials located at `config/credentials.json`. You can either edit this file directly with your server and database credentials or leave it empty and provide credentials interactively via CLI prompts during migration.
+This version uses a .env configuration file for credentials located at `config/.env`. You can either edit this file directly with your server and database credentials or leave it empty and provide credentials interactively via CLI prompts during migration.
 
-Example `config/credentials.json`:
+Example `config/.env.example`:
 
-```json
-{
-  "cpanel": {
-    "host": "cpanel.example.com",
-    "username": "cpaneluser",
-    "password": "cpanelpass",
-    "port": 21,
-    "database": {
-      "name": "cpanel_db",
-      "user": "cpanel_db_user",
-      "password": "cpanel_db_pass"
-    }
-  },
-  "cyberpanel": {
-    "host": "cyberpanel.example.com",
-    "username": "cyberuser",
-    "password": "cyberpass",
-    "port": 22,
-    "database": {
-      "name": "cyberpanel_db",
-      "user": "cyberpanel_db_user",
-      "password": "cyberpanel_db_pass"
-    }
-  }
-}
-```
+# Copy this file to .env and fill in your credentials
+
+# Source cPanel FTP
+CPANEL_FTP_HOST=
+CPANEL_FTP_PORT=21
+CPANEL_FTP_USER=
+CPANEL_FTP_PASS=
+
+# Destination CyberPanel SSH
+CYBERPANEL_SSH_HOST=
+CYBERPANEL_SSH_PORT=22
+CYBERPANEL_SSH_USER=
+CYBERPANEL_SSH_PASS=
+
+# Source CyberPanel SSH
+SOURCE_CYBERPANEL_SSH_HOST=
+SOURCE_CYBERPANEL_SSH_PORT=22
+SOURCE_CYBERPANEL_SSH_USER=
+SOURCE_CYBERPANEL_SSH_PASS=
+
+# Destination cPanel FTP
+DEST_C_PANEL_FTP_HOST=
+DEST_C_PANEL_FTP_PORT=21
+DEST_C_PANEL_FTP_USER=
+DEST_C_PANEL_FTP_PASS=
 
 ---
 
