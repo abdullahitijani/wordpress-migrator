@@ -1,16 +1,9 @@
 # WordPress Migration Script (PowerShell) with dependency checks and installation prompts
 
 param(
-    [Parameter(Mandatory=$true)]
     [string]$SourceDir,
-
-    [Parameter(Mandatory=$true)]
     [string]$SourceSSH,
-
-    [Parameter(Mandatory=$true)]
     [string]$DestFTP,
-
-    [Parameter(Mandatory=$true)]
     [string]$DestFTPPass
 )
 
@@ -35,6 +28,21 @@ foreach ($cmd in $requiredCommands) {
             Install-Command $cmd
         }
     }
+}
+
+if (-not $SourceDir) {
+    $SourceDir = Read-Host "Source WordPress directory (e.g. C:\inetpub\wwwroot)"
+}
+if (-not $SourceSSH) {
+    $SourceSSH = Read-Host "Source SSH user and host (e.g. user@host)"
+}
+if (-not $DestFTP) {
+    $DestFTP = Read-Host "Destination FTP user and host (e.g. user@host)"
+}
+if (-not $DestFTPPass) {
+    $DestFTPPass = Read-Host -AsSecureString "Destination FTP password"
+    $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($DestFTPPass)
+    $DestFTPPass = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
 }
 
 $ZipName = "wordpress_migration_$(Get-Date -UFormat %s).zip"

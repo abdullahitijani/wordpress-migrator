@@ -38,15 +38,20 @@ for cmd in "${required_commands[@]}"; do
   fi
 done
 
+# Prompt for inputs if not provided as arguments
 if [ "$#" -ne 4 ]; then
-  echo "Usage: $0 [source_dir] [source_ssh_user@source_ssh_host] [dest_ftp_user@dest_ftp_host] [dest_ftp_password]"
-  exit 1
+  echo "Please enter the following details:"
+  read -p "Source WordPress directory (e.g. /var/www/html): " SOURCE_DIR
+  read -p "Source SSH user and host (e.g. user@host): " SOURCE_SSH
+  read -p "Destination FTP user and host (e.g. user@host): " DEST_FTP
+  read -s -p "Destination FTP password: " DEST_FTP_PASS
+  echo
+else
+  SOURCE_DIR=$1
+  SOURCE_SSH=$2
+  DEST_FTP=$3
+  DEST_FTP_PASS=$4
 fi
-
-SOURCE_DIR=$1
-SOURCE_SSH=$2
-DEST_FTP=$3
-DEST_FTP_PASS=$4
 
 ZIP_NAME="wordpress_migration_$(date +%s).zip"
 REMOTE_ZIP="/tmp/$ZIP_NAME"
