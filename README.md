@@ -53,82 +53,10 @@ The tool will prompt for:
 6. Database export, transfer, and import will be performed automatically.
 7. Monitor the console output for progress and errors.
 
-## Web UI
+## Web UI (IN NEXT VERSION)
 
-A web-based UI is available at `src/web.php` which provides a form to enter migration details, shows migration progress, and displays logs dynamically.
+A web-based UI is planned for the next update, available at `src/web.php`, which will provide a form to enter migration details, show migration progress, and display logs dynamically.
 
-## Shell Scripts and Node/Python Scripts
-
-For users without PHP installed, migration scripts are provided in multiple languages:
-
-- **Bash script** (`migration.sh`) for Mac/Linux
-- **PowerShell script** (`migration.ps1`) for Windows
-- **Python script** (`migration.py`) cross-platform
-- **Node.js script** (`migration.js`) cross-platform
-
-### Running migration.sh (Bash)
-
-1. Make executable:
-
-```bash
-chmod +x migration.sh
-```
-
-2. Run with arguments or interactively:
-
-```bash
-./migration.sh [source_dir] [source_ssh_user@source_ssh_host] [dest_ftp_user@dest_ftp_host] [dest_ftp_password]
-```
-
-If no arguments are provided, the script will prompt for each detail.
-
-Example:
-
-```bash
-./migration.sh /var/www/html user@sourcehost ftpuser@desthost ftppassword
-```
-
-### Running migration.ps1 (PowerShell)
-
-1. Open PowerShell and navigate to the script directory.
-
-2. Run with parameters or interactively:
-
-```powershell
-.\migration.ps1 -SourceDir <source_dir> -SourceSSH <user@host> -DestFTP <user@host> -DestFTPPass <password>
-```
-
-If parameters are omitted, the script will prompt for each detail.
-
-Example:
-
-```powershell
-.\migration.ps1 -SourceDir C:\inetpub\wwwroot -SourceSSH user@sourcehost -DestFTP ftpuser@desthost -DestFTPPass ftppassword
-```
-
-### Running migration.py (Python)
-
-1. Ensure Python 3 is installed.
-
-2. Run with arguments or interactively:
-
-```bash
-python3 migration.py --source-dir <source_dir> --source-ssh <user@host> --dest-ftp <user@host> --dest-ftp-pass <password>
-```
-
-If arguments are omitted, the script will prompt for each detail.
-
-### Running migration.js (Node.js)
-
-1. Ensure Node.js is installed.
-
-2. Run with arguments or interactively:
-
-```bash
-node migration.js [source_dir] [source_ssh_user@source_ssh_host] [dest_ftp_user@dest_ftp_host] [dest_ftp_password]
-```
-
-If arguments are omitted, the script will prompt for each detail.
 
 ## Notes
 
@@ -136,20 +64,16 @@ If arguments are omitted, the script will prompt for each detail.
 - The migration scripts zip the source WordPress directory on the source server, transfer the zip file, and upload it to the destination FTP server.
 - Manual unzipping on the destination server may be required.
 
+
 ## Testing
 
 - Use the provided local VM setup guide (`local-vm-setup/README.md`) to create test environments.
-- Test the PHP CLI, web UI, and all migration scripts according to your environment.
+- Test the PHP CLI, web UI, and shell scripts according to your environment.
 
 ## Support
 
 For issues or feature requests, please open an issue in the repository.
-node migration.js [source_dir] [source_ssh_user@source_ssh_host] [dest_ftp_user@dest_ftp_host] [dest_ftp_password]
-python3 migration.py --source-dir <source_dir> --source-ssh <user@host> --dest-ftp <user@host> --dest-ftp-pass <password>
-.\migration.ps1 -SourceDir C:\inetpub\wwwroot -SourceSSH user@sourcehost -DestFTP ftpuser@desthost -DestFTPPass ftppassword
-.\migration.ps1 -SourceDir <source_dir> -SourceSSH <user@host> -DestFTP <user@host> -DestFTPPass <password>
-./migration.sh /var/www/html user@sourcehost ftpuser@desthost ftppassword
-./migration.sh [source_dir] [source_ssh_user@source_ssh_host] [dest_ftp_user@dest_ftp_host] [dest_ftp_password]
+
 
 ## Notes
 
