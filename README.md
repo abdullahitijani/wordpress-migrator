@@ -57,18 +57,15 @@ The tool will prompt for:
 
 A web-based UI is planned for the next update, available at `src/web.php`, which will provide a form to enter migration details, show migration progress, and display logs dynamically.
 
-
 ## Notes
 
 - Ensure SSH and FTP credentials are correct and accessible.
 - The migration scripts zip the source WordPress directory on the source server, transfer the zip file, and upload it to the destination FTP server.
 - Manual unzipping on the destination server may be required.
 
-
 ## Testing
 
-- Use the provided local VM setup guide (`local-vm-setup/README.md`) to create test environments.
-- Test the PHP CLI, web UI, and shell scripts according to your environment.
+- Test the PHP CLI and shell scripts according to your environment.
 
 ## Support
 
