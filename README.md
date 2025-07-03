@@ -53,6 +53,64 @@ The tool will prompt for:
 6. Database export, transfer, and import will be performed automatically.
 7. Monitor the console output for progress and errors.
 
+## Web UI
+
+A web-based UI is available at `src/web.php` which provides a form to enter migration details, shows migration progress, and displays logs dynamically.
+
+## Shell Scripts
+
+For users without PHP installed, shell script versions are provided:
+
+- `migration.sh` for Mac/Linux (bash)
+- `migration.ps1` for Windows (PowerShell)
+
+### Running migration.sh
+
+1. Make executable:
+
+```bash
+chmod +x migration.sh
+```
+
+2. Run with arguments:
+
+```bash
+./migration.sh [source_dir] [source_ssh_user@source_ssh_host] [dest_ftp_user@dest_ftp_host] [dest_ftp_password]
+```
+
+Example:
+
+```bash
+./migration.sh /var/www/html user@sourcehost ftpuser@desthost ftppassword
+```
+
+### Running migration.ps1
+
+1. Open PowerShell and navigate to the script directory.
+
+2. Run with parameters:
+
+```powershell
+.\migration.ps1 -SourceDir <source_dir> -SourceSSH <user@host> -DestFTP <user@host> -DestFTPPass <password>
+```
+
+Example:
+
+```powershell
+.\migration.ps1 -SourceDir C:\inetpub\wwwroot -SourceSSH user@sourcehost -DestFTP ftpuser@desthost -DestFTPPass ftppassword
+```
+
+## Notes
+
+- Ensure SSH and FTP credentials are correct and accessible.
+- The migration scripts zip the source WordPress directory on the source server, transfer the zip file, and upload it to the destination FTP server.
+- Manual unzipping on the destination server may be required.
+
+## Testing
+
+- Use the provided local VM setup guide (`local-vm-setup/README.md`) to create test environments.
+- Test the PHP CLI, web UI, and shell scripts according to your environment.
+
 ## Logs
 
 Migration logs are saved in the `logs/migration.log` file. Review this file for detailed information about the migration process and troubleshooting.
