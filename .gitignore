@@ -1,0 +1,29 @@
+# Ignore log files
+logs/
+*.log
+
+# Ignore backup files
+backup/
+
+# Ignore environment config files
+config/credentials.json
+config/.env
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore IDE files
+.vscode/
+.idea/
+
+# Ignore zip files created during migration
+website-migrator-beta/*.zip
+
+src/css
+src/web.php
+src/info.php
+src/login.php
+src/logout.php
+src/footer.php
+src/favicon.ico
