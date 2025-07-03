@@ -9,3 +9,6 @@ src/css/
 src/footer.php
 src/logout.php
 src/info.php
+logs/migration.log
+/local-vm-setup
+/local-vm-setup/README.md

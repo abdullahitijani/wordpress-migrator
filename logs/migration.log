@@ -1,1 +1,11 @@
 This would contain the log details for the migration
+[2025-07-02 18:53:04] ✅ Connected to CyberPanel server at 198.46.249.114:2050 as root
+[2025-07-02 18:53:04] ✅ Executed command: zip -r /tmp/wordpress_migration_1751482380.zip '/home/docker'
+Output:   adding: home/docker/ (stored 0%)
+  adding: home/docker/test.html (stored 0%)
+  adding: home/docker/.bash_profile (deflated 20%)
+  adding: home/docker/.bash_logout (stored 0%)
+  adding: home/docker/.bashrc (deflated 35%)
+  adding: home/docker/test.css (stored 0%)
+
+[2025-07-02 18:54:19] ❌ FTP connection to ftp.devabdul.com.ng:21 failed.
