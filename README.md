@@ -78,10 +78,6 @@ For issues or feature requests, please open an issue in the repository.
 - The migration scripts zip the source WordPress directory on the source server, transfer the zip file, and upload it to the destination FTP server.
 - Manual unzipping on the destination server may be required.
 
-## Testing
-
-- Use the provided local VM setup guide (`local-vm-setup/README.md`) to create test environments.
-- Test the PHP CLI, web UI, and shell scripts according to your environment.
 
 ## Logs
 
