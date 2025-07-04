@@ -1,6 +1,0 @@
-[2025-07-04 19:12:47] ✅ Connected to CyberPanel server at 198.46.249.114:2050 as root
-[2025-07-04 19:12:47] ✅ Executed command: zip -r /tmp/wordpress_migration_1751656363.zip ''
-Output: 	zip warning: name not matched: 
-
-zip error: Nothing to do! (try: zip -r /tmp/wordpress_migration_1751656363.zip . -i )
-
