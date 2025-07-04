@@ -31,3 +31,4 @@ src/favicon.ico
 .migration.sh
 .migration.js
 .migration.ps1
+logs/migration.log
