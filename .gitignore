@@ -32,3 +32,25 @@ src/favicon.ico
 .migration.js
 .migration.ps1
 logs/migration.log
+
+# Ignore log files
+logs/
+*.log
+
+# Ignore backup files
+backup/
+
+# Ignore environment config files
+config/credentials.json
+config/.env
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore IDE files
+.vscode/
+.idea/
+
+# Ignore zip files created during migration
+website-migrator-beta/*.zip
